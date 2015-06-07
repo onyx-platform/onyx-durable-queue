@@ -1,4 +1,4 @@
-## onyx-core-durable-queue
+## onyx-durable-queue
 
 Onyx plugin for Factual's [durable-queue](https://github.com/Factual/durable-queue).
 
