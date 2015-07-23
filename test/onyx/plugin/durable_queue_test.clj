@@ -46,7 +46,7 @@
 
 (def catalog
   [{:onyx/name :in
-    :onyx/ident :durable-queue/read-from-queue
+    :onyx/plugin :onyx.plugin.durable-queue/read-from-queue
     :onyx/type :input
     :onyx/medium :durable-queue
     :durable-queue/queue-name input-queue-name
@@ -62,7 +62,7 @@
     :onyx/batch-size batch-size}
 
    {:onyx/name :out
-    :onyx/ident :durable-queue/write-to-queue
+    :onyx/plugin :onyx.plugin.durable-queue/write-to-queue
     :onyx/type :output
     :onyx/medium :durable-queue
     :durable-queue/queue-name output-queue-name
