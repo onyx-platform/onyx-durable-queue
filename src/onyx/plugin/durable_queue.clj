@@ -37,17 +37,19 @@
   (read-batch [_ event]
     (let [pending (count @pending-messages)
           max-segments (min (- max-pending pending) batch-size)
-          step-ms (/ batch-timeout batch-size)
+          finish-time (+ (System/currentTimeMillis) batch-timeout)
           batch (if (pos? max-segments)
-                  (loop [segments [] cnt 0]
-                    (if (= cnt max-segments)
+                  (loop [segments [] cnt 0 segment-timeout batch-timeout]
+                    (if (or (= cnt max-segments) (<= segment-timeout 0))
                       segments
-                      (if-let [message (d/take! conn queue-name step-ms nil)]
-                        (recur (conj segments 
-                                     (t/input (java.util.UUID/randomUUID) message))
-                               (inc cnt))
-                        segments)))
-                  (<!! (timeout step-ms)))]
+                      (let [start-time (System/currentTimeMillis)] 
+                        (if-let [message (d/take! conn queue-name segment-timeout nil)]
+                          (recur (conj segments 
+                                       (t/input (java.util.UUID/randomUUID) message))
+                                 (inc cnt)
+                                 (- segment-timeout (- (System/currentTimeMillis) start-time)))
+                          segments))))
+                  (<!! (timeout batch-timeout)))]
       (doseq [m batch]
         (swap! pending-messages assoc (:id m) (:message m)))
       {:onyx.core/batch (map #(update-in % [:message] deref) batch)}))
