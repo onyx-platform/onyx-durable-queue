@@ -5,7 +5,7 @@ dependencies:
 
 test:
   override:
-    - lein test:
+    - lein midje:
         timeout: 240 
 
 machine:
