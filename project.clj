@@ -16,4 +16,7 @@
                  [org.onyxplatform/onyx "0.7.4-20150916_205458-gf33df5b"]
                  [factual/durable-queue "0.1.5"]]
   :profiles {:dev {:dependencies [[midje "1.7.0"]]
-                   :plugins [[lein-midje "3.1.1"]]}})
+                   :plugins [[lein-midje "3.1.1"]
+                             [lein-set-version "0.4.1"]
+                             [lein-update-dependency "0.1.2"]
+                             [lein-pprint "1.1.1"]]}})
