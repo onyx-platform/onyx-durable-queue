@@ -1,4 +1,4 @@
-(defproject org.onyxplatform/onyx-durable-queue "0.7.5-SNAPSHOT"
+(defproject org.onyxplatform/onyx-durable-queue "0.7.5"
   :description "Onyx plugin for Factual's durable-queue"
   :url "https://github.com/onyx-platform/onyx-durable-queue"
   :license {:name "Eclipse Public License"
@@ -13,7 +13,7 @@
                              :sign-releases false}}
   :dependencies [[org.clojure/clojure "1.7.0"]
                  ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
-                 [org.onyxplatform/onyx "0.7.4-20150916_205458-gf33df5b"]
+                 [org.onyxplatform/onyx "0.7.5"]
                  [factual/durable-queue "0.1.5"]]
   :profiles {:dev {:dependencies [[midje "1.7.0"]]
                    :plugins [[lein-midje "3.1.1"]
