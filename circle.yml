@@ -11,3 +11,9 @@ test:
 machine:
   java:
     version: oraclejdk8
+
+deployment:
+  update-projects:
+    branch: master
+    commands:
+      - lein deploy
