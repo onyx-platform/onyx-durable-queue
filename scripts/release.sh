@@ -21,6 +21,11 @@ version_base=$(echo "$1"|sed s/"-.*"//g)
 release_branch=$2
 current_version=`lein pprint :version | sed s/\"//g`
 
+# Update to release version.
+git checkout master
+git stash
+git pull
+
 if [[ "$new_version" == *[.]*[.]*[.]* ]]; 
 then 
 	echo "Four digit release number "$new_version" therefore releasing plugin without updating Onyx dependency"
@@ -40,10 +45,6 @@ else
 	exit 1
 fi
 
-# Update to release version.
-git checkout master
-git stash
-git pull
 lein set-version $new_plugin_version
 
 sed -i.bak "s/$current_version/$new_plugin_version/g" README.md
@@ -56,7 +57,7 @@ git push origin master
 
 # Merge artifacts into release branch.
 git checkout $release_branch
-git merge master -X theirs
+git merge -m "Merge branch 'master' into $release_branch" master -X theirs
 git push origin $release_branch
 
 # Prepare next release cycle.
