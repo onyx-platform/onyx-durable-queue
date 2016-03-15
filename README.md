@@ -7,7 +7,7 @@ Onyx plugin for Factual's [durable-queue](https://github.com/Factual/durable-que
 In your project file:
 
 ```clojure
-[org.onyxplatform/onyx-durable-queue "0.8.9.1-SNAPSHOT"]
+[org.onyxplatform/onyx-durable-queue "0.9.0.0-SNAPSHOT"]
 ```
 
 In your peer boot-up namespace:
@@ -24,7 +24,7 @@ Catalog entry:
 
 ```clojure
 {:onyx/name :read-from-queue
- :onyx/ident :durable-queue/read-from-queue
+ :onyx/tenancy-ident :durable-queue/read-from-queue
  :onyx/type :input
  :onyx/medium :durable-queue
  :durable-queue/queue-name input-queue-name
@@ -49,7 +49,7 @@ Catalog entry:
 
 ```clojure
 {:onyx/name :write-to-queue
- :onyx/ident :durable-queue/write-to-queue
+ :onyx/tenancy-ident :durable-queue/write-to-queue
  :onyx/type :output
  :onyx/medium :durable-queue
  :durable-queue/queue-name output-queue-name
