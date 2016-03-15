@@ -24,8 +24,6 @@
                              :onyx/plugin :onyx.plugin.durable-queue/read-from-queue
                              :onyx/type :input
                              :onyx/medium :durable-queue
-                                        ;:durable-queue/queue-name s/Str
-                                        ;:durable-queue/directory s/Str
                              :durable-queue/max-queue-size Integer/MAX_VALUE
                              :durable-queue/slab-size 67108864
                              :durable-queue/fsync-put? true
@@ -67,8 +65,6 @@
                              :onyx/plugin :onyx.plugin.durable-queue/write-to-queue
                              :onyx/type :output
                              :onyx/medium :durable-queue
-                                        ;:durable-queue/queue-name s/Str
-                                        ;:durable-queue/directory s/Str
                              :durable-queue/max-queue-size Integer/MAX_VALUE
                              :durable-queue/slab-size 67108864
                              :durable-queue/fsync-put? true
