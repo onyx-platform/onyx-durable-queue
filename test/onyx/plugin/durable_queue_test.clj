@@ -1,121 +1,71 @@
 (ns onyx.plugin.durable-queue-test
-  (:require [onyx.peer.pipeline-extensions :as p-ext]
+  (:require [aero.core :refer [read-config]]
             [onyx.plugin.durable-queue]
-            [midje.sweet :refer :all]
             [durable-queue :as d]
-            [onyx.api]))
-
-(def id (java.util.UUID/randomUUID))
-
-(def env-config
-  {:zookeeper/address "127.0.0.1:2188"
-   :zookeeper/server? true
-   :zookeeper.server/port 2188
-   :onyx/id id})
-
-(def peer-config
-  {:zookeeper/address "127.0.0.1:2188"
-   :onyx.peer/job-scheduler :onyx.job-scheduler/greedy
-   :onyx.messaging/impl :aeron
-   :onyx.messaging/peer-port 40200
-   :onyx.messaging/bind-addr "localhost"
-   :onyx/id id})
-
-(def env (onyx.api/start-env env-config))
-
-(def peer-group (onyx.api/start-peer-group peer-config))
-
-(def n-messages 1000)
-
-(def batch-size 20)
-
-(def input-queue-name (str "input_queue_" (Math/abs (hash (java.util.UUID/randomUUID)))))
-
-(def output-queue-name (str "output_queue_" (Math/abs (hash (java.util.UUID/randomUUID)))))
-
-(def dir "/tmp")
-
-(def conn (d/queues dir {}))
-
-(doseq [n (range n-messages)]
-  (d/put! conn input-queue-name {:n n}))
-
-(d/put! conn input-queue-name :done)
+            [clojure.test :refer [deftest is]]
+            [com.stuartsierra.component :as component]
+            [onyx api
+             [job :refer [add-task]]
+             [test-helper :refer [with-test-env]]]
+            [onyx.plugin
+             [core-async :refer [take-segments! get-core-async-channels]]
+             [durable-queue]]
+            [onyx.tasks
+             [durable-queue :as dq]
+             [core-async :as core-async]]))
 
 (defn my-inc [{:keys [n] :as segment}]
   (assoc segment :n (inc n)))
 
-(def catalog
-  [{:onyx/name :in
-    :onyx/plugin :onyx.plugin.durable-queue/read-from-queue
-    :onyx/type :input
-    :onyx/medium :durable-queue
-    :durable-queue/queue-name input-queue-name
-    :durable-queue/directory dir
-    :durable-queue/fsync-take? true
-    :onyx/batch-size batch-size
-    :onyx/max-peers 1
-    :onyx/doc "Reads segments via durable-queue"}
+(defn build-job [input-queue-name output-queue-name dir batch-size batch-timeout]
+  (let [batch-settings {:onyx/batch-size batch-size :onyx/batch-timeout batch-timeout}
+        base-job (merge {:workflow [[:in :inc]
+                                    [:inc :out]]
+                         :catalog [(merge {:onyx/name :inc
+                                           :onyx/fn ::my-inc
+                                           :onyx/type :function}
+                                          batch-settings)]
+                         :lifecycles []
+                         :windows []
+                         :triggers []
+                         :flow-conditions []
+                         :task-scheduler :onyx.task-scheduler/balanced})]
+    (-> base-job
+        (add-task (dq/read-from-queue :in (merge {:durable-queue/queue-name input-queue-name
+                                                  :durable-queue/directory dir
+                                                  :durable-queue/fsync-take? true} batch-settings)))
+        (add-task (dq/write-to-queue :out (merge {:durable-queue/queue-name output-queue-name
+                                                  :durable-queue/directory dir
+                                                  :durable-queue/fsync-put? true} batch-settings))))))
 
-   {:onyx/name :inc
-    :onyx/fn :onyx.plugin.durable-queue-test/my-inc
-    :onyx/type :function
-    :onyx/batch-size batch-size}
-
-   {:onyx/name :out
-    :onyx/plugin :onyx.plugin.durable-queue/write-to-queue
-    :onyx/type :output
-    :onyx/medium :durable-queue
-    :durable-queue/queue-name output-queue-name
-    :durable-queue/directory dir
-    :durable-queue/fsync-put? true
-    :onyx/batch-size batch-size
-    :onyx/doc "Writes segments via durable-queue"}])
-
-(def workflow
-  [[:in :inc]
-   [:inc :out]])
-
-(def lifecycles
-  [{:lifecycle/task :in
-    :lifecycle/calls :onyx.plugin.durable-queue/reader-state-calls}
-   {:lifecycle/task :in
-    :lifecycle/calls :onyx.plugin.durable-queue/reader-connection-calls}
-   {:lifecycle/task :out
-    :lifecycle/calls :onyx.plugin.durable-queue/writer-calls}])
-
-(def v-peers (onyx.api/start-peers 3 peer-group))
-
-(def job-id
-  (:job-id
-   (onyx.api/submit-job
-    peer-config
-    {:catalog catalog
-     :workflow workflow
-     :lifecycles lifecycles
-     :task-scheduler :onyx.task-scheduler/balanced})))
-
-(onyx.api/await-job-completion peer-config job-id)
-
-(def results
-  (loop [rets []]
-    (let [x (d/take! (d/queues dir {}) output-queue-name 1000 nil)]
-      (when x
-        (d/complete! x))
-      (cond (nil? x)
-            rets
-            (= @x :done)
-            (conj rets @x)
-            :else
-            (recur (conj rets @x))))))
-
-(let [expected (set (map (fn [x] {:n (inc x)}) (range n-messages)))]
-  (fact (set (butlast results)) => expected)
-  (fact (last results) => :done))
-
-(doseq [v-peer v-peers]
-  (onyx.api/shutdown-peer v-peer))
-
-(onyx.api/shutdown-peer-group peer-group)
-
-(onyx.api/shutdown-env env)
+(deftest durable-queue-test
+  (let [{:keys [env-config
+                peer-config
+                durable-queue-config]} (read-config (clojure.java.io/resource "config.edn") {:profile :test})
+        {:keys [durable-queue/dir
+                durable-queue/input-queue-name
+                durable-queue/output-queue-name]} durable-queue-config
+        job (build-job input-queue-name output-queue-name dir 10 1000)
+        conn (d/queues dir {})]
+    (try
+      (doseq [n (range 1000)]
+        (d/put! conn input-queue-name {:n n}))
+      (d/put! conn input-queue-name :done)
+      (with-test-env [test-env [4 env-config peer-config]]
+        (onyx.test-helper/validate-enough-peers! test-env job)
+        (->> (:job-id (onyx.api/submit-job peer-config job))
+             (onyx.api/await-job-completion peer-config))
+        (is (= (set
+                (butlast
+                 (loop [rets []]
+                   (let [x (d/take! (d/queues dir {}) output-queue-name 1000 nil)]
+                     (when x
+                       (d/complete! x))
+                     (cond (nil? x)
+                           rets
+                           (= @x :done)
+                           (conj rets @x)
+                           :else
+                           (recur (conj rets @x)))))))
+               (set (map (fn [x] {:n (inc x)}) (range 1000))))))
+      (d/delete! conn))))
