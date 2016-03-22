@@ -101,7 +101,7 @@
     [_ {:keys [onyx.core/results]}]
     (doseq [msg (mapcat :leaves (:tree results))]
       (d/put! conn queue-name (:message msg)))  
-    {:onyx.core/written? true})
+    {:durable-queue/written? true})
 
   (seal-resource 
     [_ {:keys [onyx.core/results]}]
