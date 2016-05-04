@@ -11,6 +11,7 @@
    (s/optional-key :durable-queue/fsync-take?) s/Bool
    (s/optional-key :durable-queue/fsync-threshold) (s/maybe s/Num)
    (s/optional-key :durable-queue/fsync-interval) (s/maybe s/Num)
+   (s/optional-key :onyx/max-peers) (s/eq 1)
    (os/restricted-ns :durable-queue) s/Any})
 
 (s/defn ^:always-validate read-from-queue
