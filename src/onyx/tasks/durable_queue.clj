@@ -2,21 +2,17 @@
   (:require [schema.core :as s]
             [onyx.schema :as os]))
 
-(def UserTaskMapKey
-  (os/build-allowed-key-ns :durable-queue))
-
 (def DurableQueueInputTaskMap
-  (s/->Both [os/TaskMap
-             {:durable-queue/queue-name s/Str
-              :durable-queue/directory s/Str
-              (s/optional-key :durable-queue/max-queue-size) s/Num
-              (s/optional-key :durable-queue/slab-size) s/Num
-              (s/optional-key :durable-queue/fsync-put?) s/Bool
-              (s/optional-key :durable-queue/fsync-take?) s/Bool
-              (s/optional-key :durable-queue/fsync-threshold) (s/maybe s/Num)
-              (s/optional-key :durable-queue/fsync-interval) (s/maybe s/Num)
-              :onyx/max-peers (s/eq 1)
-              UserTaskMapKey s/Any}]))
+  {:durable-queue/queue-name s/Str
+   :durable-queue/directory s/Str
+   (s/optional-key :durable-queue/max-queue-size) s/Num
+   (s/optional-key :durable-queue/slab-size) s/Num
+   (s/optional-key :durable-queue/fsync-put?) s/Bool
+   (s/optional-key :durable-queue/fsync-take?) s/Bool
+   (s/optional-key :durable-queue/fsync-threshold) (s/maybe s/Num)
+   (s/optional-key :durable-queue/fsync-interval) (s/maybe s/Num)
+   (s/optional-key :onyx/max-peers) (s/eq 1)
+   (os/restricted-ns :durable-queue) s/Any})
 
 (s/defn ^:always-validate read-from-queue
   ([task-name :- s/Keyword opts]
@@ -37,8 +33,7 @@
                          :lifecycle/calls :onyx.plugin.durable-queue/reader-state-calls}
                         {:lifecycle/task task-name
                          :lifecycle/calls :onyx.plugin.durable-queue/reader-connection-calls}]}
-    :schema {:task-map DurableQueueInputTaskMap
-             :lifecycles [os/Lifecycle]}})
+    :schema {:task-map DurableQueueInputTaskMap}})
   ([task-name :- s/Keyword
     queue-name :- s/Str
     directory :- s/Str
@@ -48,16 +43,15 @@
                                      task-opts))))
 
 (def DurableQueueOutputTaskMap
-  (s/->Both [os/TaskMap
-             {:durable-queue/queue-name s/Str
-              :durable-queue/directory s/Str
-              (s/optional-key :durable-queue/max-queue-size) s/Num
-              (s/optional-key :durable-queue/slab-size) s/Num
-              (s/optional-key :durable-queue/fsync-put?) s/Bool
-              (s/optional-key :durable-queue/fsync-take?) s/Bool
-              (s/optional-key :durable-queue/fsync-threshold) (s/maybe s/Num)
-              (s/optional-key :durable-queue/fsync-interval) (s/maybe s/Num)
-              UserTaskMapKey s/Any}]))
+  {:durable-queue/queue-name s/Str
+   :durable-queue/directory s/Str
+   (s/optional-key :durable-queue/max-queue-size) s/Num
+   (s/optional-key :durable-queue/slab-size) s/Num
+   (s/optional-key :durable-queue/fsync-put?) s/Bool
+   (s/optional-key :durable-queue/fsync-take?) s/Bool
+   (s/optional-key :durable-queue/fsync-threshold) (s/maybe s/Num)
+   (s/optional-key :durable-queue/fsync-interval) (s/maybe s/Num)
+   (os/restricted-ns :durable-queue) s/Any})
 
 (s/defn ^:always-validate write-to-queue
   ([task-name :- s/Keyword opts]
@@ -75,8 +69,7 @@
                             opts)
            :lifecycles [{:lifecycle/task task-name
                          :lifecycle/calls :onyx.plugin.durable-queue/writer-calls}]}
-    :schema {:task-map DurableQueueOutputTaskMap
-             :lifecycles [os/Lifecycle]}})
+    :schema {:task-map DurableQueueOutputTaskMap}})
   ([task-name :- s/Keyword
     queue-name :- s/Str
     directory :- s/Str
