@@ -7,7 +7,7 @@ Onyx plugin for Factual's [durable-queue](https://github.com/Factual/durable-que
 In your project file:
 
 ```clojure
-[org.onyxplatform/onyx-durable-queue "0.9.11.1-SNAPSHOT"]
+[org.onyxplatform/onyx-durable-queue "0.9.12.0"]
 ```
 
 In your peer boot-up namespace:
