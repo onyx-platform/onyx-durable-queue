@@ -13,7 +13,7 @@
                              :sign-releases false}}
   :dependencies [[org.clojure/clojure "1.7.0"]
                  ^{:voom {:repo "git@github.com:onyx-platform/onyx.git" :branch "master"}}
-                 [org.onyxplatform/onyx "0.9.15-20161128_161925-ga177cfb"]
+                 [org.onyxplatform/onyx "0.9.15-20161129_050222-gdbc4a53"]
                  [factual/durable-queue "0.1.5"]
                  [aero "0.2.0"]]
   :profiles {:dev {:plugins [[lein-set-version "0.4.1"]
